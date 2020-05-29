@@ -41,3 +41,14 @@ target_link_libraries(gpu_bench
   ${FWGPU_LIB_NAME}
   ${CMAKE_THREAD_LIBS_INIT}
 )
+
+# Micro-Benchmarks
+cuda_add_executable(ubench ubench.cu ubench.cuh)
+target_include_directories(ubench
+  PRIVATE ${PROJECT_SOURCE_DIR}/cutlass/include)
+target_link_libraries(ubench
+  benchmark
+  benchmark_main
+  ${FWGPU_LIB_NAME}
+  ${CMAKE_THREAD_LIBS_INIT}
+)

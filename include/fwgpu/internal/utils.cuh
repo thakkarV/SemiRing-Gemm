@@ -8,9 +8,9 @@
 namespace fwgpu {
 namespace internal {
 
-template <typename T>
+template <typename T, typename L>
 inline auto alloc_and_init_device_gemm_mats(
-    const Matrix<T> &A, const Matrix<T> &B, const Matrix<T> &C)
+    const Matrix<T, L> &A, const Matrix<T, L> &B, const Matrix<T, L> &C)
     -> std::tuple<T *, T *, T *> {
   // allocate for inputs and outputs on device
   void *d_A, *d_B, *d_C;
@@ -34,10 +34,12 @@ inline auto dealloc_device_gemm_mats(std::tuple<T *, T *, T *> device_ptrs) -> v
   cudaFree(std::get<2>(device_ptrs));
 }
 
-template <typename T>
+template <typename T, typename L>
 inline auto alloc_and_init_device_gemm_mats(
-    const Matrix<T> &A, const Matrix<T> &B, const Matrix<T> &C, const Matrix<T> &D)
-    -> std::tuple<T *, T *, T *, T *> {
+    const Matrix<T, L> &A,
+    const Matrix<T, L> &B,
+    const Matrix<T, L> &C,
+    const Matrix<T, L> &D) -> std::tuple<T *, T *, T *, T *> {
   // allocate for inputs and outputs on device
   void *d_A, *d_B, *d_C, *d_D;
   cudaMalloc(&d_A, A.bytesize());
