@@ -23,22 +23,18 @@ __global__ auto gpu_fwgemm_naive(
   int ty = blockIdx.y * blockDim.y + threadIdx.y;
   int tx = blockIdx.x * blockDim.x + threadIdx.x;
 
-  int n_idx = ty;
-  while (n_idx < n) {
-    int m_idx = tx;
-    while (m_idx < m) {
+  int col_idx = ty;
+  while (col_idx < n) {
+    int row_idx = tx;
+    while (row_idx < m) {
       // initialize accumulators
       auto runnign_min_dist = std::numeric_limits<T>::infinity();
-      int running_parent    = 0;
-      if (do_epilogue_min) {
-        runnign_min_dist = dist[(n_idx * lddist) + m_idx];
-        running_parent   = parent[(n_idx * lddist) + m_idx];
-      }
+      int running_parent    = 0; // this initialization value does not matter
 
       // FW main loop
       for (int k_idx = 0; k_idx < k; ++k_idx) {
-        // calculate the distance between n_idx->m_idx by going through k_idx
-        auto curr_dist = A[(k_idx * lda) + m_idx] + B[(n_idx * ldb) + k_idx];
+        // calculate the distance between col_idx->row_idx by going through k_idx
+        T curr_dist = A[(k_idx * lda) + row_idx] + B[(col_idx * ldb) + k_idx];
         if (curr_dist < runnign_min_dist) {
           runnign_min_dist = curr_dist;
           running_parent   = k_idx + parent_offset;
@@ -46,12 +42,20 @@ __global__ auto gpu_fwgemm_naive(
       }
 
       // store final output
-      dist[(n_idx * lddist) + m_idx]   = runnign_min_dist;
-      parent[(n_idx * lddist) + m_idx] = running_parent;
+      if (do_epilogue_min) {
+        if (runnign_min_dist < dist[(col_idx * lddist) + row_idx]) {
+          dist[(col_idx * lddist) + row_idx]   = runnign_min_dist;
+          parent[(col_idx * lddist) + row_idx] = running_parent;
+        }
+        else {
+          dist[(col_idx * lddist) + row_idx]   = runnign_min_dist;
+          parent[(col_idx * lddist) + row_idx] = running_parent;
+        }
+      }
 
-      m_idx += gridDim.x * blockDim.x;
+      row_idx += gridDim.x * blockDim.x;
     }
-    n_idx += gridDim.y * blockDim.y;
+    col_idx += gridDim.y * blockDim.y;
   }
 }
 
